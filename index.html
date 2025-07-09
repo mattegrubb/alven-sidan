@@ -1,15 +1,463 @@
 <!DOCTYPE html>
-<html lang="sv">
+<html lang="sv" class="scroll-smooth">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Där Älven Går</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Där Älven Går (Vår Första Sång) - En Interaktiv Berättelse</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    
+    <!-- Chosen Palette: Norrsken & Värme -->
+    <!-- Application Structure Plan: En narrativ, vertikalt scrollande enkelsidesapplikation. Strukturen guidar användaren genom historien bakom sången i en logisk följd: 1) En stämningsfull introduktion med en personlig bild. 2) Den interaktiva sångtexten. 3) En visuell dekonstruktion av teman. 4) En djupdykande analys. 5) Ett avslutande personligt avsnitt med ett bildgalleri som representerar parets resa. Denna struktur omvandlar en rapport till en känslomässig resa, där interaktivitet och personliga bilder fördjupar förståelsen. Gemini API har lagts till för att generera dynamiskt innehåll. -->
+    <!-- Visualization & Content Choices: 
+        - Bildgalleri -> Mål: Visualisera parets resa och framtid. -> Metod: Ett responsivt bildgalleri i sista sektionen. -> Interaktion: Statisk visning. -> Motivering: De nya bilderna ger en stark personlig och visuell avslutning som förstärker sångens budskap om en ljus framtid.
+        - Gemini-analys & bröllopslöfte -> Mål: Erbjuda dynamiska, kreativa perspektiv. -> Metod: Knappar som anropar Gemini API. -> Motivering: Lägger till ett interaktivt och meningsfullt lager till upplevelsen.
+        - Tematisk Syntes -> Mål: Visualisera sångens influenser. -> Metod: Ett konceptuellt ringdiagram (Chart.js). -> Motivering: Sammanfattar de kvalitativa influenserna i en lättförståelig visuell form.
+        - Bekräftelse: Inga SVG-grafiker eller Mermaid JS används.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF8; 
+            color: #312F2D;
+        }
+        h1, h2, h3, h4 {
+            font-family: 'Playfair Display', serif;
+        }
+        .bg-warm-beige { background-color: #F5F1EC; }
+        .bg-soft-clay { background-color: #E4D5C7; }
+        .text-deep-brown { color: #312F2D; }
+        .accent-rust { color: #A85A43; }
+        .border-soft-clay { border-color: #E4D5C7; }
+
+        .lyric-line {
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin: 2px 0;
+            display: inline-block;
+        }
+        .lyric-line:hover {
+            background-color: #E4D5C7; 
+        }
+        .lyric-line.active {
+            background-color: #A85A43;
+            color: #FDFBF8;
+        }
+        #analysis-panel {
+            transition: transform 0.3s ease-in-out;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #A85A43;
+            animation: spin 1s ease infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
-<body class="bg-blue-100 min-h-screen flex items-center justify-center">
-  <div class="text-center">
-    <h1 class="text-4xl font-bold mb-4">Där Älven Går</h1>
-    <p class="text-lg">Vår första sång – en interaktiv berättelse</p>
-  </div>
+<body class="text-deep-brown">
+
+    <div id="app-container">
+        <header class="sticky top-0 bg-warm-beige/80 backdrop-blur-sm z-20 shadow-sm">
+            <nav class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <div class="flex-shrink-0">
+                        <h3 class="text-xl font-bold accent-rust">Vår Första Sång</h3>
+                    </div>
+                    <div class="hidden md:block">
+                        <div class="ml-10 flex items-baseline space-x-4">
+                            <a href="#sangen" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-soft-clay transition-colors">Sången</a>
+                            <a href="#bakgrunden" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-soft-clay transition-colors">Bakgrunden</a>
+                            <a href="#analysen" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-soft-clay transition-colors">Analysen</a>
+                            <a href="#skapelsen" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-soft-clay transition-colors">Skapelsen</a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </header>
+
+        <main>
+            <section id="hero" class="relative py-20 sm:py-32 bg-cover bg-center" style="background-image: url('https://placehold.co/1200x800/6d635b/ffffff?text=Kyss+vid+forsen');">
+                <div class="absolute inset-0 bg-black/30"></div>
+                <div class="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center fade-in">
+                    <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold text-white">Där Älven Går</h1>
+                    <p class="mt-4 text-lg sm:text-xl text-white">(Vår Första Sång)</p>
+                    <p class="mt-6 max-w-2xl mx-auto text-base sm:text-lg text-gray-200">
+                        En interaktiv berättelse om en sång född ur längtan, självinsikt och en kärlek lika kraftfull som en norrländsk fors.
+                    </p>
+                </div>
+            </section>
+
+            <section id="sangen" class="py-16 sm:py-24 bg-warm-beige">
+                <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="text-center mb-12">
+                        <h2 class="text-3xl sm:text-4xl font-bold">Sången</h2>
+                        <p class="mt-4 max-w-2xl mx-auto text-lg">Klicka på en textrad för att se analysen och tanken bakom den.</p>
+                    </div>
+
+                    <div class="flex flex-col lg:flex-row gap-8">
+                        <div id="lyrics-container" class="lg:w-1/2 prose max-w-none text-center text-lg leading-loose">
+                        </div>
+
+                        <div id="analysis-panel" class="lg:w-1/2 p-6 bg-white rounded-lg shadow-lg border border-soft-clay sticky top-24 h-fit">
+                            <h3 id="analysis-title" class="text-2xl font-bold mb-4 accent-rust">Analys</h3>
+                            <div id="analysis-content" class="text-base text-gray-700 space-y-3">
+                                <p>Välkommen. Här visas analysen för den textrad du klickar på. Utforska berättelsen i texten, rad för rad.</p>
+                            </div>
+                            <div id="gemini-analysis-section" class="mt-4 pt-4 border-t border-soft-clay hidden">
+                                <button id="gemini-analysis-button" class="w-full bg-rust-500 text-white font-bold py-2 px-4 rounded hover:bg-rust-700 transition-colors flex items-center justify-center bg-accent-rust text-white">
+                                    ✨ Få en djupare poetisk analys
+                                </button>
+                                <div id="gemini-analysis-loader" class="hidden my-2 flex justify-center"><div class="spinner"></div></div>
+                                <div id="gemini-analysis-result" class="mt-4 text-sm bg-warm-beige p-3 rounded"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="bakgrunden" class="py-16 sm:py-24">
+                <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="text-center mb-12">
+                        <h2 class="text-3xl sm:text-4xl font-bold">Bakgrunden</h2>
+                        <p class="mt-4 max-w-2xl mx-auto text-lg">Sången är byggd på tre grundpelare: er personliga resa, Norrbottens själ och en medveten arkitektur. Tillsammans skapar de en unik och djupt personlig helhet.</p>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div class="p-6 bg-warm-beige rounded-lg shadow-md border border-soft-clay">
+                            <h3 class="text-2xl font-bold accent-rust mb-3">Resan: Från Låda till Bro</h3>
+                            <p class="mb-2"><strong>Den fyrkantiga lådan:</strong> En metafor för Mattias tidigare emotionella frånvaro och självinsikten om att ha levt i en stängd värld, oförmögen att se Madeléne fullt ut.</p>
+                            <p><strong>Brobygget:</strong> Symboliserar det medvetna, aktiva valet att reparera och återuppbygga relationen. Det är inte en magisk återförening, utan ett hoppfullt och gemensamt arbete.</p>
+                        </div>
+
+                        <div class="p-6 bg-warm-beige rounded-lg shadow-md border border-soft-clay">
+                            <h3 class="text-2xl font-bold accent-rust mb-3">Norrbottens Själ</h3>
+                             <p class="mb-2"><strong>HOOJA:</strong> Lånar den jordnära, robusta och opretentiösa attityden. Löften om stöd formuleras med bilder från en norrländsk verklighet, som att vara en "kåta när stormen viner".</p>
+                            <p><strong>LBSB:</strong> Inspirerar den musikaliska dynamiken – från sårbara verser till explosiva, firande refränger. Också de direkta, omvända referenserna till "Nostradamus" och "Den sista sången".</p>
+                        </div>
+                        
+                        <div class="p-6 bg-warm-beige rounded-lg shadow-md border border-soft-clay md:col-span-2 lg:col-span-1">
+                             <h3 class="text-2xl font-bold accent-rust mb-3">Tematisk Syntes</h3>
+                             <p class="mb-4">Ett visuellt estimat av hur de olika inspirationskällorna bidragit till sångens själ.</p>
+                             <div class="chart-container">
+                                <canvas id="synthesisChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="analysen" class="py-16 sm:py-24 bg-warm-beige">
+                <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="text-center mb-12">
+                        <h2 class="text-3xl sm:text-4xl font-bold">Djupdykning i Arkitekturen</h2>
+                        <p class="mt-4 max-w-2xl mx-auto text-lg">För den som vill förstå hantverket bakom varje del av sången. Klicka på en sektion för att läsa mer.</p>
+                    </div>
+                    <div id="accordion-container" class="space-y-4">
+                    </div>
+                </div>
+            </section>
+
+             <section id="skapelsen" class="py-16 sm:py-24">
+                <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                    <h2 class="text-3xl sm:text-4xl font-bold">För Mattias & Madeléne</h2>
+                    <p class="mt-8 max-w-3xl mx-auto text-lg leading-relaxed">
+                        Detta är mer än en sång; det är ett löfte. Ett bevis på att kärlek kan hitta tillbaka, att broar kan återuppbyggas, och att den vackraste framtiden är den man skapar tillsammans, med öppna ögon och öppna hjärtan. Dit älven går, där går ni nu.
+                    </p>
+                    
+                    <div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                        <div class="text-center">
+                            <img src="https://placehold.co/600x400/3a5f8a/FFFFFF?text=B%C3%A5ttur" alt="Mattias och Madeléne i en båt" class="rounded-lg shadow-xl w-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/600x400/E4D5C7/312F2D?text=Bild+saknas';">
+                            <p class="mt-4 text-md italic">Mot en ljus horisont, tillsammans.</p>
+                        </div>
+                        <div class="text-center">
+                            <img src="https://placehold.co/600x400/2a4b36/FFFFFF?text=Vandringsled" alt="En person vid en vandringsled" class="rounded-lg shadow-xl w-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/600x400/E4D5C7/312F2D?text=Bild+saknas';">
+                            <p class="mt-4 text-md italic">Varje stig, både egen och gemensam, har lett oss hit.</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-16">
+                        <button id="generate-vow-button" class="bg-accent-rust text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-opacity-80 transition-all transform hover:scale-105">
+                            ✨ Skapa ett Bröllopslöfte
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <footer class="bg-soft-clay">
+            <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-deep-brown">
+                <p>&copy; 2025. Skapad med kärlek för en kärlekshistoria.</p>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- Modal for Wedding Vow -->
+    <div id="vow-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
+        <div class="bg-warm-beige rounded-lg shadow-2xl max-w-2xl w-full m-4 p-6 relative max-h-[90vh] overflow-y-auto">
+            <button id="close-vow-modal" class="absolute top-4 right-4 text-2xl font-bold text-deep-brown">&times;</button>
+            <h4 class="text-2xl font-bold accent-rust mb-4">Utkast till Bröllopslöfte</h4>
+            <div id="vow-loader" class="flex justify-center my-8"><div class="spinner"></div></div>
+            <div id="vow-content" class="text-base text-gray-700 space-y-4 leading-relaxed hidden"></div>
+        </div>
+    </div>
+
+
+    <script>
+        const lyricsData = [
+            { type: 'vers', content: '(Vers 1)' },
+            { type: 'line', content: "Jag levde i en låda, en fyrkantig design", analysis: "Etablerar den centrala metaforen från Mattias egen text. Det sätter en oerhört personlig och sårbar ton och visar på ägarskap över det förflutna." },
+            { type: 'line', content: "Gick runt som en robot, följde varje linj'", analysis: "Förstärker bilden av ett omedvetet, mekaniskt liv och den emotionella frånvaro som präglade tiden innan återföreningen." },
+            { type: 'line', content: "I huset var jag inneboende, en sur och vilsen man", analysis: "Kontrasterar direkt 'huset', där frustration och distans fanns, med 'stugan', där kärleken blomstrade. Hämtat direkt från Mattias insikter." },
+            { type: 'line', content: "Men i stugan vid vattnet, där fann vi varann", analysis: "Identifierar platsen för genuin kontakt och ömsesidighet, en fristad från den problematiska vardagen." },
+            { type: 'line', content: "Jag hörde dina rop, men jag valde att va' tyst", analysis: "Ett ärligt erkännande av att ha ignorerat Madelénes behov, en nyckelinsikt från Mattias resa." },
+            { type: 'line', content: "Trodde den som tiger håller med, och allt var lugnt och lyst", analysis: "Ett direkt citat från Mattias text som visar på djup självinsikt om hans tidigare missuppfattningar kring kommunikation." },
+            { type: 'line', content: "Men jag såg inte dig.", analysis: "En kort, kraftfull sammanfattning av problemet: bristen på att se och bekräfta sin partner." },
+            { type: 'break' },
+            { type: 'refräng', content: '(Refräng)' },
+            { type: 'line', content: "Och nu står vi här vid forsen, där allting börjar om", analysis: "Anknyter till fotografiet och forsen som en metafor för en kraftfull, renande nystart." },
+            { type: 'line', content: "Som älven vid ditt barndomshem, så dånar hjärtat från och med nu och fram", analysis: "Kopplar kärlekskänslan till Madelénes rötter och hembygd, vilket gör den djupt personlig för henne." },
+            { type: 'line', content: "Du är min polare, min kompass, min person", analysis: "Blandar det jordnära 'polare' (från HOOJA:s värld) med det djupt meningsfulla 'person' från Mattias egen beskrivning. En komplett bild av deras relation." },
+            { type: 'line', content: "Låt mig va' din kåta när stormen viner, din trygga slutstation", analysis: "Översätter ett generiskt löfte om stöd till en robust, norrlandsspecifik metafor som känns äkta och stark." },
+            { type: 'line', content: "Jag kasta' dig i soporna, nu vill jag göra dig hel", analysis: "En modig och brutalt ärlig rad hämtad från Mattias text. Den visar fullt ansvar för smärtan och gör löftet om gottgörelse trovärdigt." },
+            { type: 'line', content: "Det här är ingen slump, det är vår del av livets spel.", analysis: "Förmedlar en känsla av öde och att deras resa, med alla dess svårigheter, var menad att leda dem hit." },
+            { type: 'break' },
+            { type: 'vers', content: '(Vers 2)' },
+            { type: 'line', content: "Jag har hittat nyckeln nu, den jag gömt i alla år", analysis: "En kraftfull bild för det personliga genombrottet och upplåsningen av den 'fyrkantiga lådan'." },
+            { type: 'line', content: "Till lådan som jag stängde, som lämnade såna sår", analysis: "Ett erkännande av att hans eget agerande var källan till smärtan i relationen." },
+            { type: 'line', content: "Jag slutat vara baksätesförare i bilen som är din", analysis: "En metafor från Mattias text som visar nyfunnen respekt för Madelénes autonomi och styrka." },
+            { type: 'line', content: "Och ser den rakryggade Madde, som alltid varit min", analysis: "Visar att han nu ser henne klart igen, den starka person han blev kär i." },
+            { type: 'line', content: "Från Gällivare till kusten, ekar samma melodi", analysis: "Placerar deras kärlekshistoria i ett specifikt norrbottniskt landskap, vilket gör den storslagen och lokal på samma gång." },
+            { type: 'line', content: "Att den man älskar väntar man på, ett helt liv om det måste bli", analysis: "Ett universellt kärlekstema som sammanfattar deras tålamod och hängivenhet." },
+            { type: 'line', content: "Så.", analysis: "Ett kort ord som fungerar som en paus och en bekräftelse, full av självförtroende." },
+            { type: 'break' },
+            { type: 'refräng', content: '(Refräng)' },
+            { type: 'line', content: "...", analysis: "Refrängen återkommer med samma kraftfulla löften, nu förstärkta av insikterna i andra versen." },
+            { type: 'break' },
+            { type: 'stick', content: '(Stick)' },
+            { type: 'line', content: "Dom sjunger om Nostradamus, om en framtid kall och död", analysis: "En direkt referens till en av Madelénes favoritlåtar från LBSB, vilket skapar omedelbar igenkänning." },
+            { type: 'line', content: "Men jag levde min profetia, i min egen tystnads nöd", analysis: "Vänder på LBSB-låtens tema. Hans 'profetia' var inte yttre undergång, utan den inre, självskapade isoleringen." },
+            { type: 'line', content: "Jag brände alla broar, med min egoism och lättja", analysis: "Ett direkt erkännande av det destruktiva beteendet, hämtat från Mattias text." },
+            { type: 'line', content: "Men det här är ingen sista sång som tystnaden ska fläta", analysis: "En direkt motreplik till LBSB:s 'Den sista sången'. Omvandlar ett tema om avslut till ett manifest för en ny början." },
+            { type: 'line', content: "Det här är första spadtaget, på en bro vi bygger nu", analysis: "Den centrala metaforen för deras framtid: ett aktivt, medvetet och hoppfullt återuppbyggnadsarbete." },
+            { type: 'line', content: "Från hålet jag grävde, klättrar jag upp med dig, bara jag och du.", analysis: "Ett kraftfullt löfte om att möta henne i det mörker han skapade och tillsammans hitta vägen upp till ljuset." },
+            { type: 'break' },
+            { type: 'outro', content: '(Outro)' },
+            { type: 'line', content: "Dit älven går...", analysis: "En stillsam, repetitiv hyllning till HOOJA och en symbol för en resa som nu har ett lugnt, stadigt och oändligt flöde." },
+            { type: 'line', content: "Där går vi nu...", analysis: "Bekräftar att de nu följer samma väg, tillsammans." },
+            { type: 'line', content: "Min Madeléne...", analysis: "En direkt, öm och personlig dedikation." },
+            { type: 'line', content: "Jag och du...", analysis: "Den slutgiltiga, enkla sanningen." },
+            { type: 'line', content: "Dit älven går...", analysis: "Repetitionen förstärker känslan av evighet." },
+            { type: 'line', content: "För evigt nu...", analysis: "Sångens sista löfte." },
+        ];
+
+        const accordionData = [
+            { title: "Versernas Resa: Från Fyrkantig Låda till Öppenhet", content: "Verserna berättar den brutalt ärliga historien om varför det fanns en längtan. Den första versen etablerar den centrala metaforen från Mattias text: 'Jag levde i en låda'. Detta sätter en personlig och sårbar ton. Den andra versen handlar om lösningen: 'Jag har hittat nyckeln nu'. Den visar en nyfunnen respekt och förståelse för Madelénes styrka." },
+            { title: "Refrängens Löfte: Ett Ansvarstagande", content: "Refrängen är sångens emotionella epicentrum, men med en ny dimension: ansvar. Den mest centrala raden är 'Jag kasta' dig i soporna, nu vill jag göra dig hel'. Genom att sjunga detta högt tar Mattias fullt ansvar för den smärta han orsakat, vilket gör löftet om att gottgöra oändligt mycket starkare och mer trovärdigt." },
+            { title: "Stickens Vändpunkt: Att Bygga en Bro", content: "Sticket är sångens klimax. Här vävs de djupaste insikterna från Mattias text samman med Madelénes favoritlåtar. Referenserna till 'Nostradamus' och 'Den sista sången' får en ny kontext. 'Jag brände alla broar' är ett direkt erkännande, som omedelbart följs av lösningen: 'Det här är första spadtaget, på en bro vi bygger nu'. Brobygget blir den centrala metaforen för deras framtid." },
+        ];
+
+        let currentLyricData = { lyric: '', analysis: '' };
+
+        async function callGemini(prompt) {
+            let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+            const payload = { contents: chatHistory };
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API call failed with status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    return result.candidates[0].content.parts[0].text;
+                } else {
+                    console.error("Unexpected API response structure:", result);
+                    return "Kunde inte generera svar. Försök igen.";
+                }
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                return "Ett fel uppstod. Kontrollera konsolen för mer information.";
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const lyricsContainer = document.getElementById('lyrics-container');
+            const analysisTitle = document.getElementById('analysis-title');
+            const analysisContent = document.getElementById('analysis-content');
+            const geminiSection = document.getElementById('gemini-analysis-section');
+            const geminiButton = document.getElementById('gemini-analysis-button');
+            const geminiLoader = document.getElementById('gemini-analysis-loader');
+            const geminiResult = document.getElementById('gemini-analysis-result');
+            
+            let activeLine = null;
+
+            lyricsData.forEach((item, index) => {
+                if (item.type === 'line' && item.content !== "...") {
+                    const lineEl = document.createElement('span');
+                    lineEl.textContent = item.content;
+                    lineEl.className = 'lyric-line';
+                    lineEl.dataset.index = index;
+                    lineEl.onclick = () => {
+                        const data = lyricsData[index];
+                        analysisTitle.textContent = "Analys: Textrad";
+                        analysisContent.innerHTML = `<p class="fade-in">${data.analysis}</p>`;
+                        
+                        currentLyricData = { lyric: data.content, analysis: data.analysis };
+                        geminiSection.classList.remove('hidden');
+                        geminiResult.innerHTML = '';
+
+                        if (activeLine) {
+                            activeLine.classList.remove('active');
+                        }
+                        lineEl.classList.add('active');
+                        activeLine = lineEl;
+                    };
+                    lyricsContainer.appendChild(lineEl);
+                    lyricsContainer.appendChild(document.createElement('br'));
+                } else if (item.type === 'vers' || item.type === 'refräng' || item.type === 'stick' || item.type === 'outro') {
+                    const headingEl = document.createElement('p');
+                    headingEl.textContent = item.content;
+                    headingEl.className = 'font-bold mt-6 mb-2 accent-rust';
+                    lyricsContainer.appendChild(headingEl);
+                } else if (item.type === 'break') {
+                     lyricsContainer.appendChild(document.createElement('br'));
+                }
+            });
+
+            geminiButton.addEventListener('click', async () => {
+                geminiLoader.classList.remove('hidden');
+                geminiButton.classList.add('hidden');
+                geminiResult.innerHTML = '';
+
+                const prompt = `Här är en textrad från en sång: '${currentLyricData.lyric}'. Den ursprungliga analysen är: '${currentLyricData.analysis}'. Ge en kort (2-3 meningar), djupare och mer poetisk tolkning av denna textrad. Fokusera på de underliggande känslorna och symboliken.`;
+                const resultText = await callGemini(prompt);
+                
+                geminiResult.innerHTML = resultText.replace(/\n/g, '<br>');
+                geminiLoader.classList.add('hidden');
+                geminiButton.classList.remove('hidden');
+            });
+            
+            const accordionContainer = document.getElementById('accordion-container');
+            accordionData.forEach(item => {
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <div class="border border-soft-clay rounded-lg">
+                        <button class="accordion-button w-full flex justify-between items-center p-4 text-left font-bold text-lg hover:bg-soft-clay transition-colors">
+                            <span>${item.title}</span>
+                            <span class="accordion-icon transform transition-transform">▼</span>
+                        </button>
+                        <div class="accordion-content hidden p-4 border-t border-soft-clay">
+                            <p>${item.content}</p>
+                        </div>
+                    </div>
+                `;
+                accordionContainer.appendChild(div);
+            });
+
+            document.querySelectorAll('.accordion-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    const content = button.nextElementSibling;
+                    const icon = button.querySelector('.accordion-icon');
+                    content.classList.toggle('hidden');
+                    icon.classList.toggle('rotate-180');
+                });
+            });
+
+            const ctx = document.getElementById('synthesisChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Mattias Personliga Resa', 'Norrbottnisk Identitet (Musik)', 'Deras Gemensamma Historia'],
+                    datasets: [{
+                        label: 'Bidrag till Sången',
+                        data: [50, 30, 20],
+                        backgroundColor: ['rgba(168, 90, 67, 0.8)', 'rgba(110, 105, 100, 0.8)', 'rgba(228, 213, 199, 1)'],
+                        borderColor: ['#FDFBF8', '#FDFBF8', '#FDFBF8'],
+                        borderWidth: 4
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#312F2D', font: { family: "'Inter', sans-serif" } } },
+                        tooltip: { callbacks: { label: (c) => `${c.label || ''}: ${c.parsed || 0}%` } }
+                    }
+                }
+            });
+
+            // Wedding Vow Modal Logic
+            const vowModal = document.getElementById('vow-modal');
+            const openVowButton = document.getElementById('generate-vow-button');
+            const closeVowButton = document.getElementById('close-vow-modal');
+            const vowLoader = document.getElementById('vow-loader');
+            const vowContent = document.getElementById('vow-content');
+
+            openVowButton.addEventListener('click', async () => {
+                vowModal.style.display = 'flex';
+                vowLoader.style.display = 'flex';
+                vowContent.style.display = 'none';
+                vowContent.innerHTML = '';
+
+                const fullLyricsText = lyricsData.filter(l => l.type === 'line').map(l => l.content).join('\n');
+                const prompt = `Du är en AI-assistent som hjälper till att skriva personliga texter. Baserat på följande sångtext, som skrevs av Mattias till sin älskade Madeléne för att fira deras återförening, skriv ett utkast till ett vackert och innerligt bröllopslöfte från honom till henne. Sångtexten är fylld av metaforer om en 'låda' (som representerar ett stängt förflutet), en 'bro' (som representerar deras gemensamma arbete att bygga en framtid) och en 'älv' (som symboliserar deras kärleks kraft och flöde). Väv in dessa teman på ett naturligt sätt. Tonen ska vara ärlig, sårbar, hoppfull och djupt kärleksfull. Här är sångtexten: \n\n${fullLyricsText}`;
+                
+                const resultText = await callGemini(prompt);
+                vowContent.innerHTML = resultText.replace(/\n/g, '<br><br>');
+                vowLoader.style.display = 'none';
+                vowContent.style.display = 'block';
+            });
+
+            closeVowButton.addEventListener('click', () => {
+                vowModal.style.display = 'none';
+            });
+
+            window.addEventListener('click', (event) => {
+                if (event.target === vowModal) {
+                    vowModal.style.display = 'none';
+                }
+            });
+        });
+    </script>
 </body>
 </html>
